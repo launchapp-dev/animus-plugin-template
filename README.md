@@ -56,9 +56,11 @@ cargo generate --git https://github.com/launchapp-dev/animus-plugin-template sub
 
 - **Protocol design:** [`docs/architecture/subject-backend-plugins.md`](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/subject-backend-plugins.md)
 - **Naming contract:** [`docs/architecture/naming-contract.md`](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/naming-contract.md)
-- **Repository name:** `animus-plugin-template` (brand prefix for discovery)
+- **Repository name:** `animus-plugin-template`
 - **Generated repo names:** `animus-<kind>-<name>` (e.g. `animus-subject-jira`)
-- **Generated binary names:** `ao-<kind>-<name>` (the `ao-*` protocol prefix per the naming contract)
+- **Generated crate / binary names:** `animus-<kind>-<name>` (matches the repo name)
+
+Per the v0.4.0 naming convention: repo, crate, and binary all share the same `animus-{kind}-{name}` name. There is no longer an `ao-` prefix anywhere.
 
 ## License
 
