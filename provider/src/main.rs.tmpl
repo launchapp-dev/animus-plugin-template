@@ -2,11 +2,12 @@
 //!
 //! The Animus daemon spawns this binary and speaks JSON-RPC over
 //! stdin/stdout. Most of the protocol plumbing (`initialize`,
-//! `agent/run`, `agent/cancel`, `agent/resume`, `health/check`, streaming
-//! notifications) is handled by `animus_plugin_runtime::run_provider`;
-//! this file just constructs the backend and forwards.
+//! `agent/run`, `agent/resume`, `agent/cancel`, `health/check`)
+//! is handled by `animus_plugin_runtime::provider_main`; this file
+//! just constructs the backend and forwards.
 
-use animus_plugin_runtime::{run_provider, ProviderInfo};
+use animus_plugin_protocol::{PluginInfo, PLUGIN_KIND_PROVIDER};
+use animus_plugin_runtime::provider_main;
 use {{name_snake}}_provider::backend::{{NAME_PASCAL}}Provider;
 use {{name_snake}}_provider::config::{{NAME_PASCAL}}Config;
 
@@ -24,13 +25,12 @@ async fn main() -> anyhow::Result<()> {
     let config = {{NAME_PASCAL}}Config::from_env()?;
     let backend = {{NAME_PASCAL}}Provider::new(config)?;
 
-    let info = ProviderInfo {
-        plugin_name: env!("CARGO_PKG_NAME"),
-        plugin_version: env!("CARGO_PKG_VERSION"),
-        description: env!("CARGO_PKG_DESCRIPTION"),
-        default_tool: "{{name}}",
-        default_model: "{{name}}-default",
+    let info = PluginInfo {
+        name: env!("CARGO_PKG_NAME").to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        plugin_kind: PLUGIN_KIND_PROVIDER.to_string(),
+        description: Some(env!("CARGO_PKG_DESCRIPTION").to_string()),
     };
 
-    run_provider(info, backend).await
+    provider_main(info, backend).await
 }

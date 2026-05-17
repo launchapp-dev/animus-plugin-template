@@ -2,21 +2,17 @@
 //!
 //! TODO: implement [`{{NAME_PASCAL}}Provider`] against the {{name}}
 //! inference API. The stubs below show exactly what each method must
-//! do; replace the `todo!()` bodies with real upstream calls and
+//! do; replace the placeholder bodies with real upstream calls and
 //! remove the TODOs.
 //!
-//! See [`animus_plugin_runtime::run_provider`] for what the shared
-//! runtime gives you for free (initialize handshake, lifecycle, JSON-RPC
-//! framing, `agent/output` streaming notifications, aggregated result
-//! envelope).
+//! See [`animus_plugin_runtime::provider_main`] for what the shared
+//! runtime gives you for free (initialize handshake, JSON-RPC framing,
+//! aggregated result envelope, manifest publication).
 
-use animus_plugin_runtime::ProviderBackend;
-use animus_session_backend::{
-    error::{Error as SessionError, Result as SessionResult},
-    session::{
-        session_request::SessionRequest,
-        session_run::SessionRun,
-    },
+use animus_plugin_protocol::{HealthCheckResult, HealthStatus};
+use animus_provider_protocol::{
+    AgentResumeRequest, AgentRunRequest, AgentRunResponse, BackendError, ProviderBackend,
+    ProviderCapabilities, ProviderManifest,
 };
 use async_trait::async_trait;
 
@@ -45,47 +41,92 @@ impl {{NAME_PASCAL}}Provider {
 
 #[async_trait]
 impl ProviderBackend for {{NAME_PASCAL}}Provider {
-    /// Start (or resume) an agent session.
+    /// Static identity + declared capabilities.
     ///
-    /// The shared runtime calls `start` with a fully-populated
-    /// [`SessionRequest`]. Return a [`SessionRun`] whose `events` stream
-    /// yields `SessionEvent`s as the model produces output; the runtime
-    /// translates those into streaming `agent/output` /
-    /// `agent/thinking` / `agent/toolCall` / `agent/toolResult`
-    /// notifications back to the host.
+    /// Returned during the `initialize` handshake and again when the
+    /// host inspects the plugin via `--manifest`. Keep
+    /// `supported_models` in sync with what your upstream actually
+    /// accepts; the daemon validates `AgentRunRequest::model` against
+    /// this list before dispatching.
+    fn manifest(&self) -> ProviderManifest {
+        ProviderManifest {
+            name: env!("CARGO_PKG_NAME").to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
+            description: env!("CARGO_PKG_DESCRIPTION").to_string(),
+            supported_models: vec![
+                // TODO: list the model ids your upstream supports.
+                "{{name}}-default".to_string(),
+            ],
+            tool: "{{name}}".to_string(),
+            capabilities: ProviderCapabilities {
+                streaming: false,
+                resume: false,
+                cancellation: false,
+                write_capable: false,
+                mcp: false,
+            },
+        }
+    }
+
+    /// `agent/run` — execute a single agent turn end-to-end.
     ///
-    /// If `resume_session` is `Some`, restart from that session id
-    /// instead of opening a fresh session.
-    async fn start(
+    /// Translate `request.prompt`, `request.system_prompt`,
+    /// `request.model`, and any tool definitions into the upstream
+    /// API's chat-completion payload, await the response, and return
+    /// an [`AgentRunResponse`] with the aggregated output, token usage,
+    /// and timing metadata.
+    async fn run_agent(
         &self,
-        _request: SessionRequest,
-        _resume_session: Option<&str>,
-    ) -> SessionResult<SessionRun> {
+        _request: AgentRunRequest,
+    ) -> Result<AgentRunResponse, BackendError> {
         // Typical implementation outline:
         //
-        // 1. Translate `request.prompt`, `request.system_prompt`,
-        //    `request.model`, `request.tools` into the upstream API's
-        //    chat-completion payload.
-        // 2. Open the upstream streaming endpoint.
-        // 3. Wrap the response stream in a `SessionRun` that maps each
-        //    upstream chunk to the appropriate `SessionEvent` variant.
-        // 4. If `resume_session` is `Some`, look up the prior message
-        //    history before issuing the next turn.
-        Err(SessionError::Other(anyhow::anyhow!(
-            "{{full_name}} start is not yet implemented"
+        // 1. Translate AgentRunRequest into the upstream chat-completion
+        //    payload (model, messages, tools, response_format).
+        // 2. POST to the upstream endpoint and await the response.
+        // 3. Pull `output`, `session_id`, and `tokens_used` from the
+        //    response and pack them into AgentRunResponse.
+        Err(BackendError::Other(anyhow::anyhow!(
+            "{{full_name}} run_agent is not yet implemented"
         )))
     }
 
-    /// Cancel an in-flight session.
+    /// `agent/resume` — continue a prior session with a new turn.
     ///
-    /// The host calls `cancel` when the operator interrupts a run or a
-    /// workflow phase exceeds its timeout. The provider should abort
-    /// the upstream call and release resources.
-    async fn cancel(&self, _session_id: &str) -> SessionResult<()> {
-        // Typical implementation: look up the session's cancellation
-        // token, fire it, and drop the upstream stream.
-        Err(SessionError::Other(anyhow::anyhow!(
-            "{{full_name}} cancel is not yet implemented"
+    /// Stateless HTTP providers may return [`BackendError::Other`]
+    /// here; stateful providers should look up the previous transcript
+    /// by `request.session_id` (or equivalent) before issuing the next
+    /// turn.
+    async fn resume_agent(
+        &self,
+        _request: AgentResumeRequest,
+    ) -> Result<AgentRunResponse, BackendError> {
+        Err(BackendError::Other(anyhow::anyhow!(
+            "{{full_name}} resume_agent is not yet implemented"
         )))
+    }
+
+    /// `agent/cancel` — abort an in-flight session.
+    ///
+    /// The host calls `cancel_agent` when the operator interrupts a run
+    /// or a workflow phase exceeds its timeout. The provider should
+    /// abort the upstream call and release resources.
+    async fn cancel_agent(&self, _session_id: &str) -> Result<(), BackendError> {
+        Err(BackendError::Other(anyhow::anyhow!(
+            "{{full_name}} cancel_agent is not yet implemented"
+        )))
+    }
+
+    /// `health/check` — report current upstream health.
+    ///
+    /// A cheap, fast probe of upstream connectivity. The daemon uses
+    /// this to decide whether to keep dispatching to this provider.
+    async fn health(&self) -> Result<HealthCheckResult, BackendError> {
+        Ok(HealthCheckResult {
+            status: HealthStatus::Healthy,
+            uptime_ms: None,
+            memory_usage_bytes: None,
+            last_error: None,
+        })
     }
 }

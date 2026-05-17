@@ -39,8 +39,8 @@ id                 = "provider"
 description        = "A backend for an LLM provider (Claude, Codex, Gemini, OpenAI-compat, on-prem inference)"
 root               = "provider"
 trait              = "ProviderBackend"
-runtime_entrypoint = "run_provider"
-protocol_crate     = "animus-plugin-runtime"
+runtime_entrypoint = "provider_main"
+protocol_crate     = "animus-provider-protocol"
 status             = "stable"
 
 [[kinds]]

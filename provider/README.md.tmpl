@@ -53,17 +53,22 @@ animus workflow run --task-id <id>
 
 ## Roadmap
 
-The scaffold leaves two `todo!()` bodies in `src/backend.rs`. Implement
+The scaffold leaves placeholder bodies in `src/backend.rs`. Implement
 them in this order:
 
-- [ ] `ProviderBackend::start` — translate `SessionRequest` into the
-      upstream chat-completion payload, open the streaming response, and
-      yield `SessionEvent`s as tokens / tool calls arrive.
-- [ ] `ProviderBackend::cancel` — abort in-flight requests via the
-      upstream cancel endpoint (or by dropping the stream).
-- [ ] Resume support — when `start` is called with `resume_session`,
-      look up the prior message history before issuing the next turn.
-- [ ] Contract tests against mocked streaming responses.
+- [ ] `ProviderBackend::run_agent` — translate `AgentRunRequest` into
+      the upstream chat-completion payload, await the response, and
+      pack `output`, `session_id`, and `tokens_used` into an
+      `AgentRunResponse`.
+- [ ] `ProviderBackend::cancel_agent` — abort in-flight requests via
+      the upstream cancel endpoint (or by dropping the in-flight
+      future).
+- [ ] `ProviderBackend::resume_agent` — for stateful providers, look up
+      the prior session transcript and issue the next turn against it.
+- [ ] `ProviderBackend::manifest` — keep `supported_models` and
+      `capabilities` in lock-step with what your upstream actually
+      offers.
+- [ ] Contract tests against mocked upstream responses.
 - [ ] Release binaries via the bundled GitHub Actions workflow.
 
 ## Design pointers

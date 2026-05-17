@@ -4,8 +4,7 @@
 //! The stubs below describe exactly what each method must do; replace
 //! the `todo!()` bodies with real upstream calls and remove the TODOs.
 
-use animus_plugin_protocol::HealthCheckResult;
-use animus_plugin_runtime::default_healthy;
+use animus_plugin_protocol::{HealthCheckResult, HealthStatus};
 use animus_subject_protocol::{
     BackendError, EventStream, Subject, SubjectBackend, SubjectFilter, SubjectId, SubjectList,
     SubjectPatch, SubjectSchema, SubjectStatus,
@@ -43,11 +42,10 @@ impl SubjectBackend for {{NAME_PASCAL}}Backend {
     /// pagination, thread `filter.cursor` and `filter.limit` through and
     /// return the next page's cursor in `SubjectList::next_cursor`.
     async fn list(&self, _filter: SubjectFilter) -> Result<SubjectList, BackendError> {
-        todo!(
-            "implement {{full_name}} list: \
-             query the {{name}} API, translate native records into Vec<Subject>, \
-             and return SubjectList { subjects, next_cursor, fetched_at: Utc::now() }"
-        )
+        // TODO: query the {{name}} API, translate native records into
+        // Vec<Subject>, then return SubjectList with `subjects`,
+        // `next_cursor`, and `fetched_at: Utc::now()`.
+        todo!("implement {{full_name}} list")
     }
 
     /// `subject/get` — fetch one subject by id.
@@ -111,11 +109,16 @@ impl SubjectBackend for {{NAME_PASCAL}}Backend {
 
     /// `health/check` — return current health.
     ///
-    /// The default impl reports `Healthy` immediately. Override to
+    /// The stub below reports `Healthy` immediately. Override to
     /// surface upstream connectivity, rate-limit state, cache freshness,
     /// or any other operational signal the daemon should know about.
     async fn health(&self) -> Result<HealthCheckResult, BackendError> {
-        Ok(default_healthy())
+        Ok(HealthCheckResult {
+            status: HealthStatus::Healthy,
+            uptime_ms: None,
+            memory_usage_bytes: None,
+            last_error: None,
+        })
     }
 }
 

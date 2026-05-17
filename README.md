@@ -157,7 +157,7 @@ Each rendered project ships with:
 
 ### `subject/`
 
-Models a [`SubjectBackend`](https://github.com/launchapp-dev/animus-cli/blob/main/crates/animus-subject-protocol/src/lib.rs)
+Models a [`SubjectBackend`](https://github.com/launchapp-dev/animus-protocol/blob/main/animus-subject-protocol/src/lib.rs)
 implementation. Stubs out `list`, `get`, `update`, `watch`, `schema`,
 and `health`. Defaults `supports_watch=false` (polling-only); flip to
 `true` when you implement live subscriptions.
@@ -166,10 +166,11 @@ Reference: [`animus-subject-linear`](https://github.com/launchapp-dev/animus-sub
 
 ### `provider/`
 
-Models a [`ProviderBackend`](https://github.com/launchapp-dev/animus-cli/blob/main/crates/animus-plugin-runtime/src/lib.rs)
-implementation. Stubs out `start` (open a session, stream tokens) and
-`cancel` (abort in-flight). The shared runtime handles streaming
-notifications, JSON-RPC framing, and aggregating the final result.
+Models a [`ProviderBackend`](https://github.com/launchapp-dev/animus-protocol/blob/main/animus-provider-protocol/src/lib.rs)
+implementation. Stubs out `manifest`, `run_agent`, `resume_agent`,
+`cancel_agent`, and `health`. The shared runtime handles JSON-RPC
+framing, the initialize handshake, and aggregating the final result
+envelope.
 
 References: `animus-provider-claude`, `animus-provider-codex`,
 `animus-provider-gemini`, `animus-provider-oai`, `animus-provider-opencode`.

@@ -1,21 +1,24 @@
 //! Contract tests for `{{full_name}}`.
 //!
-//! These tests exercise [`ProviderBackend::start`] and
-//! [`ProviderBackend::cancel`] against a mocked upstream. Real
-//! credentials are never required in CI; production traffic stays
-//! behind your `cargo test --ignored` integration suite.
+//! These tests exercise [`ProviderBackend`]'s `run_agent`,
+//! `resume_agent`, `cancel_agent`, and `health` methods against a
+//! mocked upstream. Real credentials are never required in CI;
+//! production traffic stays behind your `cargo test --ignored`
+//! integration suite.
 //!
 //! Recommended test stack:
 //!
 //! - [`mockito`] for HTTP/JSON upstreams (the dependency is already
 //!   wired into `Cargo.toml`).
-//! - Streaming-aware fixtures for SSE/chunked responses.
+//! - Streaming-aware fixtures for SSE/chunked responses once your
+//!   provider opts into streaming output via `ProviderCapabilities`.
 //! - The official `animus-provider-mock` crate (planned, v0.4.x) for
 //!   protocol-level conformance assertions once it lands.
 //!
 //! Replace the placeholder tests below as soon as `backend.rs` has its
 //! first real implementation.
 
+use animus_provider_protocol::ProviderBackend;
 use {{name_snake}}_provider::backend::{{NAME_PASCAL}}Provider;
 use {{name_snake}}_provider::config::{{NAME_PASCAL}}Config;
 
@@ -26,23 +29,34 @@ fn provider_with(api_url: impl Into<String>) -> {{NAME_PASCAL}}Provider {
 }
 
 #[tokio::test]
-#[ignore = "TODO: implement once ProviderBackend::start has a real body"]
-async fn start_streams_tokens() {
-    // 1. Spin up a mockito server emitting an SSE response.
-    // 2. Call `provider.start(SessionRequest::default(), None).await`.
-    // 3. Drain the returned SessionRun's event stream and assert the
-    //    expected sequence of `SessionEvent::Output { ... }` items.
+async fn manifest_advertises_tool_name() {
+    let provider = provider_with("http://unused.example");
+    let manifest = provider.manifest();
+    assert_eq!(manifest.tool, "{{name}}");
+    assert!(
+        !manifest.supported_models.is_empty(),
+        "provider must declare at least one supported model"
+    );
+}
+
+#[tokio::test]
+#[ignore = "TODO: implement once ProviderBackend::run_agent has a real body"]
+async fn run_agent_returns_output_from_upstream() {
+    // 1. Spin up a mockito server emitting an upstream chat response.
+    // 2. Call `provider.run_agent(AgentRunRequest { ... }).await`.
+    // 3. Assert the returned AgentRunResponse fields (output,
+    //    session_id, tokens_used, duration_ms).
     unimplemented!()
 }
 
 #[tokio::test]
-#[ignore = "TODO: implement once ProviderBackend::cancel has a real body"]
-async fn cancel_aborts_in_flight_session() {
+#[ignore = "TODO: implement once ProviderBackend::cancel_agent has a real body"]
+async fn cancel_agent_aborts_in_flight_session() {
     unimplemented!()
 }
 
 #[tokio::test]
-#[ignore = "TODO: implement once ProviderBackend::start understands resume"]
-async fn start_with_resume_session_continues_prior_conversation() {
+#[ignore = "TODO: implement once ProviderBackend::resume_agent understands resume"]
+async fn resume_agent_continues_prior_conversation() {
     unimplemented!()
 }

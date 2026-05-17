@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 pub const DEFAULT_API_URL: &str = "https://api.{{name}}.example/v1";
 
 /// Default model id. Override via [`ENV_DEFAULT_MODEL`] or per-call via
-/// `SessionRequest::model`.
+/// `AgentRunRequest::model`.
 pub const DEFAULT_MODEL: &str = "{{name}}-default";
 
 /// Required: API key used to authenticate against the upstream service.
