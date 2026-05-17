@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  manifest:
+    name: template-manifest.toml parses
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate template-manifest.toml
+        run: |
+          python3 -c "
+          import sys
+          try:
+              import tomllib
+          except ImportError:
+              import tomli as tomllib
+          with open('template-manifest.toml', 'rb') as f:
+              data = tomllib.load(f)
+          assert 'kinds' in data, 'missing [[kinds]] table'
+          assert 'substitution' in data, 'missing [substitution] table'
+          assert len(data['kinds']) >= 2, 'expected at least subject + provider kinds'
+          print(f'OK — {len(data[\"kinds\"])} kinds defined, {len(data[\"substitution\"][\"variables\"])} substitution vars')
+          "
+
+  render-subject:
+    name: subject scaffold renders + cargo checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Substitute subject template into tempdir
+        run: |
+          mkdir -p $RUNNER_TEMP/subject-render
+          cd subject
+          for f in $(find . -name '*.tmpl' -type f); do
+            outf="$RUNNER_TEMP/subject-render/${f%.tmpl}"
+            mkdir -p "$(dirname "$outf")"
+            sed -e 's/{{name}}/jira/g' \
+                -e 's/{{NAME_UPPER}}/JIRA/g' \
+                -e 's/{{NAME_PASCAL}}/Jira/g' \
+                -e 's/{{name_snake}}/jira/g' \
+                -e 's/{{kind}}/subject/g' \
+                -e 's/{{full_name}}/animus-subject-jira/g' \
+                -e 's/{{description}}/An Animus subject backend plugin/g' \
+                -e 's|{{org}}|launchapp-dev|g' \
+                -e 's/{{year}}/2026/g' \
+                -e 's/{{author}}/Test Author/g' \
+                -e 's|{{author_email}}|test@example.com|g' \
+                "$f" > "$outf"
+          done
+      - name: cargo check on rendered subject scaffold
+        working-directory: ${{ runner.temp }}/subject-render
+        run: cargo check
+
+  render-provider:
+    name: provider scaffold renders + cargo checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Substitute provider template into tempdir
+        run: |
+          mkdir -p $RUNNER_TEMP/provider-render
+          cd provider
+          for f in $(find . -name '*.tmpl' -type f); do
+            outf="$RUNNER_TEMP/provider-render/${f%.tmpl}"
+            mkdir -p "$(dirname "$outf")"
+            sed -e 's/{{name}}/acme/g' \
+                -e 's/{{NAME_UPPER}}/ACME/g' \
+                -e 's/{{NAME_PASCAL}}/Acme/g' \
+                -e 's/{{name_snake}}/acme/g' \
+                -e 's/{{kind}}/provider/g' \
+                -e 's/{{full_name}}/animus-provider-acme/g' \
+                -e 's/{{description}}/An Animus provider backend plugin/g' \
+                -e 's|{{org}}|launchapp-dev|g' \
+                -e 's/{{year}}/2026/g' \
+                -e 's/{{author}}/Test Author/g' \
+                -e 's|{{author_email}}|test@example.com|g' \
+                "$f" > "$outf"
+          done
+      - name: cargo check on rendered provider scaffold
+        working-directory: ${{ runner.temp }}/provider-render
+        run: cargo check

@@ -2,28 +2,28 @@
 
 Scaffold templates for [Animus](https://github.com/launchapp-dev/animus-cli) plugins.
 
-> **Status:** Under construction — landing in Animus v0.4.0.
+> **Status:** Templates are usable today via manual scaffold or
+> `cargo generate`. A first-party `animus plugin new` scaffold command
+> is planned but **not yet shipped** — the Animus v0.4.0 CLI today
+> exposes `animus plugin install | uninstall | list | info | call | ping`,
+> with no `new` subcommand.
 
 ## What this is
 
-Animus v0.4.0 ships `animus plugin new` — a scaffold command that
-generates a new plugin project from this repository. Three plugin kinds
-are supported:
+A set of scaffold templates for building Animus plugins. Three plugin
+kinds are supported:
 
 - **`subject`** — a backend for a unit-of-work source (Linear, Jira,
   GitHub Issues, Notion, Asana, Zendesk, ...)
 - **`provider`** — a backend for an LLM provider (OpenAI, Anthropic,
   Gemini, on-prem inference, ...)
 - **`trigger`** — a backend for event ingest (Slack, generic webhooks,
-  file watchers, ...) — landing in v0.4.x.
+  file watchers, ...) — full scaffold lands in v0.4.x.
 
-```bash
-animus plugin new --kind subject --name jira
-# Creates ./animus-subject-jira/ with a working stdio plugin skeleton
-# that compiles, has the SubjectBackend trait stubbed, and runs the
-# contract test suite against animus-subject-mock. Implement the API
-# integration; ship.
-```
+Until `animus plugin new` ships, scaffold a new plugin by cloning this
+repo, copying the kind subdirectory you want, and substituting the
+template variables (see [Using the scaffold](#using-the-scaffold) below
+for the exact commands).
 
 ## Layout
 
@@ -83,25 +83,44 @@ defaults.
 
 ## Using the scaffold
 
-### Via `animus plugin new` (recommended)
+### Manually (works today)
+
+Clone the template, copy the kind subdir you want, substitute variables,
+and strip the `.tmpl` suffix:
 
 ```bash
-animus plugin new --kind subject --name jira \
-  --org launchapp-dev \
-  --description "Animus subject backend for Jira issues"
+# Clone the template
+git clone https://github.com/launchapp-dev/animus-plugin-template
+cp -r animus-plugin-template/subject my-plugin
+cd my-plugin
 
-cd animus-subject-jira
+# Replace template variables in every .tmpl file. Pick your own values
+# for {{name}}, {{org}}, etc. — the full variable list is in
+# template-manifest.toml.
+find . -name '*.tmpl' -type f -print0 | while IFS= read -r -d '' f; do
+  sed -i.bak \
+    -e 's/{{name}}/jira/g' \
+    -e 's/{{NAME_UPPER}}/JIRA/g' \
+    -e 's/{{NAME_PASCAL}}/Jira/g' \
+    -e 's/{{name_snake}}/jira/g' \
+    -e 's/{{kind}}/subject/g' \
+    -e 's/{{full_name}}/animus-subject-jira/g' \
+    -e 's/{{description}}/An Animus subject backend for Jira/g' \
+    -e 's|{{org}}|launchapp-dev|g' \
+    -e 's/{{year}}/2026/g' \
+    "$f" && rm "${f}.bak"
+done
+
+# Strip the .tmpl suffix
+find . -name '*.tmpl' -print0 | xargs -0 -I {} bash -c 'mv "$1" "${1%.tmpl}"' _ {}
+
 cargo build
 animus plugin install .
 ```
 
-`animus plugin new` clones this repository, resolves substitution
-variables (CLI flags > prompts > git config > defaults), renders every
-`.tmpl` file, and drops the result at `./<full_name>/` ready to commit.
-
 ### Via `cargo generate`
 
-You can also use this template directly with
+You can also use this template with
 [`cargo generate`](https://github.com/cargo-generate/cargo-generate):
 
 ```bash
@@ -114,16 +133,22 @@ cargo generate \
 `cargo generate` will prompt for `name`, `description`, etc. interactively.
 Pre-supply values with `--define name=jira --define description="..."`.
 
-### Manually
+### Via `animus plugin new` (planned, not yet shipped)
 
-Clone, copy the kind subdir you want, and substitute by hand:
+A first-party scaffold command is on the roadmap:
 
 ```bash
-git clone https://github.com/launchapp-dev/animus-plugin-template
-cp -R animus-plugin-template/subject animus-subject-jira
-cd animus-subject-jira
-# Rename .tmpl files and replace {{name}}, {{kind}}, {{full_name}}, etc.
+# Not implemented yet — the Animus v0.4.0 CLI today exposes only
+# `animus plugin install | uninstall | list | info | call | ping`.
+animus plugin new --kind subject --name jira \
+  --org launchapp-dev \
+  --description "Animus subject backend for Jira issues"
 ```
+
+Once shipped, it will clone this repository, resolve substitution
+variables (CLI flags > prompts > git config > defaults), render every
+`.tmpl` file, and drop the result at `./<full_name>/` ready to commit.
+Until then, use the manual or `cargo generate` paths above.
 
 ## Generated project anatomy
 
