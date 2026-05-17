@@ -1,0 +1,134 @@
+//! `SubjectBackend` implementation for `{{full_name}}`.
+//!
+//! TODO: implement [`{{NAME_PASCAL}}Backend`] against the {{name}} API.
+//! The stubs below describe exactly what each method must do; replace
+//! the `todo!()` bodies with real upstream calls and remove the TODOs.
+
+use animus_plugin_protocol::HealthCheckResult;
+use animus_plugin_runtime::default_healthy;
+use animus_subject_protocol::{
+    BackendError, EventStream, Subject, SubjectBackend, SubjectFilter, SubjectId, SubjectList,
+    SubjectPatch, SubjectSchema, SubjectStatus,
+};
+use async_trait::async_trait;
+
+use crate::config::{{NAME_PASCAL}}Config;
+
+/// Subject backend wrapping the {{name}} upstream API.
+pub struct {{NAME_PASCAL}}Backend {
+    #[allow(dead_code)]
+    config: {{NAME_PASCAL}}Config,
+    // TODO: add an upstream client here. For an HTTP API:
+    //
+    //     client: reqwest::Client,
+    //
+    // For a GraphQL API, wrap the client in a thin layer that handles
+    // query construction + response shaping.
+}
+
+impl {{NAME_PASCAL}}Backend {
+    /// Construct a backend from validated configuration.
+    pub fn new(config: {{NAME_PASCAL}}Config) -> anyhow::Result<Self> {
+        // TODO: build the upstream client here (e.g.
+        // `reqwest::Client::builder().default_headers(...)`).
+        Ok(Self { config })
+    }
+}
+
+#[async_trait]
+impl SubjectBackend for {{NAME_PASCAL}}Backend {
+    /// `subject/list` — return ready/filtered subjects for dispatch.
+    ///
+    /// Honor every populated field on `filter`. If your upstream supports
+    /// pagination, thread `filter.cursor` and `filter.limit` through and
+    /// return the next page's cursor in `SubjectList::next_cursor`.
+    async fn list(&self, _filter: SubjectFilter) -> Result<SubjectList, BackendError> {
+        todo!(
+            "implement {{full_name}} list: \
+             query the {{name}} API, translate native records into Vec<Subject>, \
+             and return SubjectList { subjects, next_cursor, fetched_at: Utc::now() }"
+        )
+    }
+
+    /// `subject/get` — fetch one subject by id.
+    ///
+    /// Return [`BackendError::NotFound`] if the id is unknown upstream.
+    /// Strip the `"{{name}}:"` prefix from `id` before sending it to
+    /// your API (the runtime already qualifies ids on the way in).
+    async fn get(&self, _id: &SubjectId) -> Result<Subject, BackendError> {
+        todo!("implement {{full_name}} get: fetch single subject by native id")
+    }
+
+    /// `subject/update` — apply a patch and return the updated subject.
+    ///
+    /// `patch.status` arrives normalized; translate it to your native
+    /// status using the workflow-YAML `status_map`. The double-`Option`
+    /// on `patch.assignee` distinguishes "not modified" (`None`) from
+    /// "clear" (`Some(None)`).
+    async fn update(
+        &self,
+        _id: &SubjectId,
+        _patch: SubjectPatch,
+    ) -> Result<Subject, BackendError> {
+        todo!(
+            "implement {{full_name}} update: \
+             translate SubjectPatch into the upstream UpdateInput and POST it, \
+             then return the freshly-fetched Subject"
+        )
+    }
+
+    /// `subject/watch` — open a server-streaming subscription.
+    ///
+    /// Polling is acceptable for v0.1.0; return `None` and the daemon
+    /// will poll `list` on its tick. To implement live updates, return
+    /// a `Pin<Box<dyn Stream<Item = SubjectChangedEvent> + Send>>` that
+    /// emits one event per upstream change (webhooks, SSE, GraphQL
+    /// subscriptions, ...).
+    async fn watch(&self) -> Option<EventStream> {
+        None
+    }
+
+    /// `subject/schema` — declare what this backend can produce.
+    ///
+    /// Keep this in lock-step with `plugin.toml::[capabilities]`.
+    fn schema(&self) -> SubjectSchema {
+        SubjectSchema {
+            kinds: vec!["{{name}}".to_string()],
+            status_values: vec![
+                SubjectStatus::Ready,
+                SubjectStatus::InProgress,
+                SubjectStatus::Blocked,
+                SubjectStatus::Done,
+                SubjectStatus::Cancelled,
+            ],
+            supports_watch: false,
+            supports_create: false,
+            supports_pagination: true,
+            native_status_values: vec![],
+            custom_fields: vec![],
+        }
+    }
+
+    /// `health/check` — return current health.
+    ///
+    /// The default impl reports `Healthy` immediately. Override to
+    /// surface upstream connectivity, rate-limit state, cache freshness,
+    /// or any other operational signal the daemon should know about.
+    async fn health(&self) -> Result<HealthCheckResult, BackendError> {
+        Ok(default_healthy())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn schema_is_self_consistent() {
+        let cfg = {{NAME_PASCAL}}Config::new("test-token", "https://example.test", None);
+        let backend = {{NAME_PASCAL}}Backend::new(cfg).expect("construct backend");
+        let schema = backend.schema();
+        assert!(!schema.kinds.is_empty(), "backend must declare at least one subject kind");
+        assert!(schema.status_values.contains(&SubjectStatus::Ready));
+    }
+}

@@ -1,0 +1,46 @@
+# Animus plugin manifest.
+#
+# This file is the discovery surface read by `animus plugin install`
+# and the daemon when wiring a subject backend into a workflow. It
+# mirrors `PluginManifest` in `animus-plugin-protocol`.
+#
+# Bump `version` in lock-step with `Cargo.toml`.
+
+schema      = "animus.plugin.v1"
+name        = "{{full_name}}"
+version     = "0.1.0"
+plugin_kind = "subject_backend"
+description = "{{description}}"
+
+# Capabilities the daemon should expect from this plugin.
+# Mirror these in `SubjectSchema` so `subject/schema` and the manifest
+# agree.
+[capabilities]
+streaming    = false   # Set to true if you implement `subject/watch`.
+progress     = false   # Set to true if long-running methods emit `$/progress`.
+cancellation = false   # Set to true if methods honor `$/cancelRequest`.
+
+# Subject kinds this backend produces. Add one entry per kind your
+# backend exposes via `Subject::kind`.
+subject_kinds = ["{{name}}"]
+
+# Native (pre-mapping) status values upstream uses. Useful for
+# `status_map` documentation in workflow YAML.
+native_status_values = []
+
+[binary]
+default = "{{full_name}}"
+
+# Environment variables the plugin reads. Surface every required env var
+# here so `animus plugin install` can prompt the operator and so
+# `animus doctor` can flag missing config.
+[[env]]
+name        = "{{NAME_UPPER}}_API_TOKEN"
+description = "API token for the upstream {{name}} service."
+required    = true
+secret      = true
+
+[[env]]
+name        = "{{NAME_UPPER}}_API_URL"
+description = "Override the upstream API base URL (defaults to the production endpoint)."
+required    = false

@@ -1,0 +1,61 @@
+//! Contract tests for `{{full_name}}`.
+//!
+//! These tests exercise every method on the [`SubjectBackend`] trait
+//! against a mocked upstream. Real credentials are never required in
+//! CI; production traffic stays behind your `cargo test --ignored`
+//! integration suite.
+//!
+//! Recommended test stack:
+//!
+//! - [`mockito`] for HTTP/JSON upstreams (the dependency is already
+//!   wired into `Cargo.toml`).
+//! - Recorded JSON fixtures under `tests/fixtures/` for cases that are
+//!   easier to verify against a captured response than to mock.
+//! - The official `animus-subject-mock` crate (planned, v0.4.x) for
+//!   protocol-level conformance assertions once it lands.
+//!
+//! Replace the `placeholder` test below as soon as `backend.rs` has
+//! its first real implementation.
+
+use {{name_snake}}_backend::backend::{{NAME_PASCAL}}Backend;
+use {{name_snake}}_backend::config::{{NAME_PASCAL}}Config;
+use animus_subject_protocol::SubjectBackend;
+
+/// Build a backend pointed at a mock URL. Use this in every test so
+/// fixtures stay isolated from each other.
+#[allow(dead_code)]
+fn backend_with(api_url: impl Into<String>) -> {{NAME_PASCAL}}Backend {
+    let cfg = {{NAME_PASCAL}}Config::new("test-token", api_url, None);
+    {{NAME_PASCAL}}Backend::new(cfg).expect("construct backend")
+}
+
+#[tokio::test]
+async fn schema_advertises_subject_kind() {
+    let backend = backend_with("http://unused.example");
+    let schema = backend.schema();
+    assert!(
+        schema.kinds.iter().any(|k| k == "{{name}}"),
+        "backend must declare the `{{name}}` subject kind"
+    );
+}
+
+#[tokio::test]
+#[ignore = "TODO: implement once SubjectBackend::list has a real body"]
+async fn list_returns_subjects_from_upstream() {
+    // 1. Spin up a mockito server with the expected upstream route.
+    // 2. Call `backend.list(SubjectFilter::default()).await`.
+    // 3. Assert the response shape and that pagination cursors round-trip.
+    unimplemented!()
+}
+
+#[tokio::test]
+#[ignore = "TODO: implement once SubjectBackend::get has a real body"]
+async fn get_returns_not_found_for_unknown_id() {
+    unimplemented!()
+}
+
+#[tokio::test]
+#[ignore = "TODO: implement once SubjectBackend::update has a real body"]
+async fn update_translates_normalized_status_to_native() {
+    unimplemented!()
+}

@@ -1,0 +1,86 @@
+//! Environment-driven configuration for `{{full_name}}`.
+//!
+//! The Animus daemon spawns the plugin as a stdio child process with no
+//! command-line arguments, so all runtime config flows in through
+//! environment variables. Mirror every variable here in `plugin.toml`'s
+//! `[[env]]` table so `animus plugin install` can prompt for them.
+
+use anyhow::{anyhow, Result};
+
+/// Default upstream endpoint. Override via [`ENV_API_URL`].
+pub const DEFAULT_API_URL: &str = "https://api.{{name}}.example/v1";
+
+/// Default model id. Override via [`ENV_DEFAULT_MODEL`] or per-call via
+/// `SessionRequest::model`.
+pub const DEFAULT_MODEL: &str = "{{name}}-default";
+
+/// Required: API key used to authenticate against the upstream service.
+pub const ENV_API_KEY: &str = "{{NAME_UPPER}}_API_KEY";
+
+/// Optional: override the upstream base URL.
+pub const ENV_API_URL: &str = "{{NAME_UPPER}}_API_URL";
+
+/// Optional: override the default model.
+pub const ENV_DEFAULT_MODEL: &str = "{{NAME_UPPER}}_DEFAULT_MODEL";
+
+/// Runtime configuration for the [`crate::backend::{{NAME_PASCAL}}Provider`].
+#[derive(Debug, Clone)]
+pub struct {{NAME_PASCAL}}Config {
+    /// API key.
+    pub api_key: String,
+    /// Upstream base URL.
+    pub api_url: String,
+    /// Default model when the caller omits one.
+    pub default_model: String,
+}
+
+impl {{NAME_PASCAL}}Config {
+    /// Read configuration from the process environment. Returns an error
+    /// if [`ENV_API_KEY`] is unset.
+    pub fn from_env() -> Result<Self> {
+        let api_key = std::env::var(ENV_API_KEY).map_err(|_| {
+            anyhow!(
+                "{ENV_API_KEY} is not set; cannot start {{full_name}} without an API key"
+            )
+        })?;
+        let api_url =
+            std::env::var(ENV_API_URL).unwrap_or_else(|_| DEFAULT_API_URL.to_string());
+        let default_model =
+            std::env::var(ENV_DEFAULT_MODEL).unwrap_or_else(|_| DEFAULT_MODEL.to_string());
+        Ok(Self { api_key, api_url, default_model })
+    }
+
+    /// Construct configuration in-memory. Used by tests and embedders
+    /// that don't want to round-trip through process environment.
+    pub fn new(
+        api_key: impl Into<String>,
+        api_url: impl Into<String>,
+        default_model: impl Into<String>,
+    ) -> Self {
+        Self {
+            api_key: api_key.into(),
+            api_url: api_url.into(),
+            default_model: default_model.into(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_builds_config_without_env() {
+        let cfg = {{NAME_PASCAL}}Config::new("key", "http://localhost:1234", "model-x");
+        assert_eq!(cfg.api_key, "key");
+        assert_eq!(cfg.api_url, "http://localhost:1234");
+        assert_eq!(cfg.default_model, "model-x");
+    }
+
+    #[test]
+    fn from_env_errors_without_key() {
+        std::env::remove_var(ENV_API_KEY);
+        let result = {{NAME_PASCAL}}Config::from_env();
+        assert!(result.is_err());
+    }
+}

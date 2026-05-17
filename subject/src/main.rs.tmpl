@@ -1,0 +1,35 @@
+//! Stdio entrypoint for the `{{full_name}}` plugin.
+//!
+//! The Animus daemon spawns this binary as a child process and speaks
+//! JSON-RPC over stdin/stdout. All actual work lives in the library
+//! crate (see `src/lib.rs`); this file just wires the backend into the
+//! shared runtime and forwards lifecycle handling to it.
+
+use animus_plugin_protocol::{PluginInfo, PLUGIN_KIND_SUBJECT_BACKEND};
+use animus_plugin_runtime::subject_backend_main;
+use {{name_snake}}_backend::backend::{{NAME_PASCAL}}Backend;
+use {{name_snake}}_backend::config::{{NAME_PASCAL}}Config;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Stderr-only logging. Stdout is reserved for JSON-RPC framing.
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .init();
+
+    let config = {{NAME_PASCAL}}Config::from_env()?;
+    let backend = {{NAME_PASCAL}}Backend::new(config)?;
+
+    let info = PluginInfo {
+        name: env!("CARGO_PKG_NAME").to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        plugin_kind: PLUGIN_KIND_SUBJECT_BACKEND.to_string(),
+        description: Some(env!("CARGO_PKG_DESCRIPTION").to_string()),
+    };
+
+    subject_backend_main(info, backend).await
+}

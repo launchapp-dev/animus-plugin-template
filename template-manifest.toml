@@ -1,0 +1,147 @@
+# Animus plugin scaffold manifest
+#
+# Consumed by `animus plugin new --kind <kind> --name <name>` and by
+# downstream tools (e.g. `cargo generate`) to know which subdirectory to
+# render, what substitution variables to prompt for, and how to assemble
+# the output project on disk.
+#
+# This file is intentionally machine-readable: changes here propagate
+# directly into the scaffold CLI. Bump `version` whenever the substitution
+# variable list or the per-kind layout changes in an incompatible way.
+
+schema      = "animus.plugin-template.v1"
+version     = "0.1.0"
+description = "Scaffold templates for Animus plugins (subject, provider, trigger)"
+homepage    = "https://github.com/launchapp-dev/animus-cli"
+repository  = "https://github.com/launchapp-dev/animus-plugin-template"
+license     = "MIT"
+
+# ---------------------------------------------------------------------------
+# Plugin kinds
+# ---------------------------------------------------------------------------
+#
+# Each entry maps a `--kind` CLI flag value to a subdirectory of this repo.
+# `trait` + `runtime_entrypoint` are informational — they tell the scaffold
+# CLI which trait the generated `backend.rs` stub should target and which
+# `animus-plugin-runtime` entrypoint `main.rs` should call.
+
+[[kinds]]
+id                 = "subject"
+description        = "A backend for a unit-of-work source (Linear, Jira, GitHub Issues, Notion, Asana, Zendesk, ...)"
+root               = "subject"
+trait              = "SubjectBackend"
+runtime_entrypoint = "subject_backend_main"
+protocol_crate     = "animus-subject-protocol"
+status             = "stable"
+
+[[kinds]]
+id                 = "provider"
+description        = "A backend for an LLM provider (Claude, Codex, Gemini, OpenAI-compat, on-prem inference)"
+root               = "provider"
+trait              = "ProviderBackend"
+runtime_entrypoint = "run_provider"
+protocol_crate     = "animus-plugin-runtime"
+status             = "stable"
+
+[[kinds]]
+id                 = "trigger"
+description        = "A backend for event ingest (Slack, generic webhooks, file watchers) — landing in v0.4.x"
+root               = "trigger"
+trait              = "TriggerBackend"
+runtime_entrypoint = "trigger_backend_main"
+protocol_crate     = "animus-trigger-protocol"
+status             = "planned"
+
+# ---------------------------------------------------------------------------
+# Substitution engine
+# ---------------------------------------------------------------------------
+#
+# Files with a `.tmpl` suffix are run through the substitution engine.
+# Files without the suffix are copied verbatim. The `.tmpl` suffix is
+# stripped from the destination path (e.g. `Cargo.toml.tmpl` -> `Cargo.toml`).
+#
+# Delimiters use a Mustache-style `{{ var }}` syntax for cross-tool
+# compatibility (cargo-generate, jinja, handlebars-rust, tinytemplate all
+# accept variants of this).
+
+[substitution]
+delimiter = "{{ }}"
+# Files matching these globs are NEVER substituted, regardless of suffix.
+copy_verbatim = ["LICENSE", ".gitignore", "**/*.png", "**/*.jpg", "**/*.ico"]
+
+# ---------------------------------------------------------------------------
+# Substitution variables
+# ---------------------------------------------------------------------------
+#
+# `required` variables must be supplied (CLI flag or interactive prompt).
+# `default` variables are auto-filled but can be overridden.
+# `derived` variables are computed from other variables and are not
+# prompted for.
+
+[[substitution.variables]]
+name        = "name"
+prompt      = "Plugin short name (kebab-case, e.g. jira, asana, openai-compat)"
+required    = true
+pattern     = "^[a-z][a-z0-9-]*[a-z0-9]$"
+example     = "jira"
+
+[[substitution.variables]]
+name        = "kind"
+prompt      = "Plugin kind (subject | provider | trigger)"
+required    = true
+choices     = ["subject", "provider", "trigger"]
+
+[[substitution.variables]]
+name        = "description"
+prompt      = "One-line plugin description"
+default     = "An Animus {{kind}} backend plugin"
+
+[[substitution.variables]]
+name        = "org"
+prompt      = "GitHub org or username that will own the plugin repo"
+default     = "launchapp-dev"
+
+[[substitution.variables]]
+name        = "author"
+prompt      = "Author name (defaults to `git config user.name`)"
+source      = "git_config:user.name"
+
+[[substitution.variables]]
+name        = "author_email"
+prompt      = "Author email (defaults to `git config user.email`)"
+source      = "git_config:user.email"
+
+# Derived variables — never prompted, always computed.
+
+[[substitution.variables]]
+name    = "full_name"
+derived = "animus-{{kind}}-{{name}}"
+
+[[substitution.variables]]
+name    = "NAME_UPPER"
+derived = "{{name | upper}}"
+
+[[substitution.variables]]
+name    = "NAME_PASCAL"
+derived = "{{name | pascal}}"
+
+[[substitution.variables]]
+name    = "name_snake"
+derived = "{{name | snake}}"
+
+[[substitution.variables]]
+name    = "year"
+derived = "{{__now | year}}"
+
+# ---------------------------------------------------------------------------
+# Shared partials
+# ---------------------------------------------------------------------------
+#
+# Files in `_common/` are not rendered into the output project as-is; they
+# are interpolated into other templates via `{% include %}` directives or
+# pre-pended to specific files. The scaffold CLI is responsible for
+# resolving these references.
+
+[partials]
+license        = "_common/LICENSE.tmpl"
+readme_header  = "_common/README-header.tmpl"

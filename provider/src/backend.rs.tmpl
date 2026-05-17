@@ -1,0 +1,91 @@
+//! `ProviderBackend` implementation for `{{full_name}}`.
+//!
+//! TODO: implement [`{{NAME_PASCAL}}Provider`] against the {{name}}
+//! inference API. The stubs below show exactly what each method must
+//! do; replace the `todo!()` bodies with real upstream calls and
+//! remove the TODOs.
+//!
+//! See [`animus_plugin_runtime::run_provider`] for what the shared
+//! runtime gives you for free (initialize handshake, lifecycle, JSON-RPC
+//! framing, `agent/output` streaming notifications, aggregated result
+//! envelope).
+
+use animus_plugin_runtime::ProviderBackend;
+use animus_session_backend::{
+    error::{Error as SessionError, Result as SessionResult},
+    session::{
+        session_request::SessionRequest,
+        session_run::SessionRun,
+    },
+};
+use async_trait::async_trait;
+
+use crate::config::{{NAME_PASCAL}}Config;
+
+/// Provider backend wrapping the {{name}} inference API.
+pub struct {{NAME_PASCAL}}Provider {
+    #[allow(dead_code)]
+    config: {{NAME_PASCAL}}Config,
+    // TODO: add an upstream client here, e.g.:
+    //
+    //     client: reqwest::Client,
+    //
+    // For providers that shell out to a local CLI tool, store the
+    // resolved binary path and a `tokio::process::Command` factory
+    // instead.
+}
+
+impl {{NAME_PASCAL}}Provider {
+    /// Construct a provider from validated configuration.
+    pub fn new(config: {{NAME_PASCAL}}Config) -> anyhow::Result<Self> {
+        // TODO: build the upstream client here.
+        Ok(Self { config })
+    }
+}
+
+#[async_trait]
+impl ProviderBackend for {{NAME_PASCAL}}Provider {
+    /// Start (or resume) an agent session.
+    ///
+    /// The shared runtime calls `start` with a fully-populated
+    /// [`SessionRequest`]. Return a [`SessionRun`] whose `events` stream
+    /// yields `SessionEvent`s as the model produces output; the runtime
+    /// translates those into streaming `agent/output` /
+    /// `agent/thinking` / `agent/toolCall` / `agent/toolResult`
+    /// notifications back to the host.
+    ///
+    /// If `resume_session` is `Some`, restart from that session id
+    /// instead of opening a fresh session.
+    async fn start(
+        &self,
+        _request: SessionRequest,
+        _resume_session: Option<&str>,
+    ) -> SessionResult<SessionRun> {
+        // Typical implementation outline:
+        //
+        // 1. Translate `request.prompt`, `request.system_prompt`,
+        //    `request.model`, `request.tools` into the upstream API's
+        //    chat-completion payload.
+        // 2. Open the upstream streaming endpoint.
+        // 3. Wrap the response stream in a `SessionRun` that maps each
+        //    upstream chunk to the appropriate `SessionEvent` variant.
+        // 4. If `resume_session` is `Some`, look up the prior message
+        //    history before issuing the next turn.
+        Err(SessionError::Other(anyhow::anyhow!(
+            "{{full_name}} start is not yet implemented"
+        )))
+    }
+
+    /// Cancel an in-flight session.
+    ///
+    /// The host calls `cancel` when the operator interrupts a run or a
+    /// workflow phase exceeds its timeout. The provider should abort
+    /// the upstream call and release resources.
+    async fn cancel(&self, _session_id: &str) -> SessionResult<()> {
+        // Typical implementation: look up the session's cancellation
+        // token, fire it, and drop the upstream stream.
+        Err(SessionError::Other(anyhow::anyhow!(
+            "{{full_name}} cancel is not yet implemented"
+        )))
+    }
+}

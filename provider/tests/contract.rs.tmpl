@@ -1,0 +1,48 @@
+//! Contract tests for `{{full_name}}`.
+//!
+//! These tests exercise [`ProviderBackend::start`] and
+//! [`ProviderBackend::cancel`] against a mocked upstream. Real
+//! credentials are never required in CI; production traffic stays
+//! behind your `cargo test --ignored` integration suite.
+//!
+//! Recommended test stack:
+//!
+//! - [`mockito`] for HTTP/JSON upstreams (the dependency is already
+//!   wired into `Cargo.toml`).
+//! - Streaming-aware fixtures for SSE/chunked responses.
+//! - The official `animus-provider-mock` crate (planned, v0.4.x) for
+//!   protocol-level conformance assertions once it lands.
+//!
+//! Replace the placeholder tests below as soon as `backend.rs` has its
+//! first real implementation.
+
+use {{name_snake}}_provider::backend::{{NAME_PASCAL}}Provider;
+use {{name_snake}}_provider::config::{{NAME_PASCAL}}Config;
+
+#[allow(dead_code)]
+fn provider_with(api_url: impl Into<String>) -> {{NAME_PASCAL}}Provider {
+    let cfg = {{NAME_PASCAL}}Config::new("test-key", api_url, "{{name}}-default");
+    {{NAME_PASCAL}}Provider::new(cfg).expect("construct provider")
+}
+
+#[tokio::test]
+#[ignore = "TODO: implement once ProviderBackend::start has a real body"]
+async fn start_streams_tokens() {
+    // 1. Spin up a mockito server emitting an SSE response.
+    // 2. Call `provider.start(SessionRequest::default(), None).await`.
+    // 3. Drain the returned SessionRun's event stream and assert the
+    //    expected sequence of `SessionEvent::Output { ... }` items.
+    unimplemented!()
+}
+
+#[tokio::test]
+#[ignore = "TODO: implement once ProviderBackend::cancel has a real body"]
+async fn cancel_aborts_in_flight_session() {
+    unimplemented!()
+}
+
+#[tokio::test]
+#[ignore = "TODO: implement once ProviderBackend::start understands resume"]
+async fn start_with_resume_session_continues_prior_conversation() {
+    unimplemented!()
+}

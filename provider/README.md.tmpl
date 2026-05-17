@@ -1,0 +1,80 @@
+# {{full_name}}
+
+An [Animus](https://github.com/launchapp-dev/animus-cli) provider backend for **{{name}}**.
+
+> **Status:** Under construction — scaffolded from
+> [`animus-plugin-template`](https://github.com/launchapp-dev/animus-plugin-template).
+> Implement the stubbed methods in `src/backend.rs` and ship.
+
+## What this is
+
+A standalone stdio plugin that exposes the {{name}} inference API as an
+Animus provider. The Animus agent runner dispatches `agent/run` calls
+into this binary and receives streaming output, tool calls, and a final
+aggregated result envelope.
+
+## Install
+
+```bash
+animus plugin install {{org}}/{{full_name}}
+```
+
+## Configure
+
+```bash
+export {{NAME_UPPER}}_API_KEY="<your-api-key>"
+# Optional overrides.
+export {{NAME_UPPER}}_API_URL="https://api.{{name}}.example/v1"
+export {{NAME_UPPER}}_DEFAULT_MODEL="{{name}}-large"
+```
+
+Then wire the provider into a workflow or agent profile:
+
+```yaml
+# .animus/workflows/standard.yaml
+providers:
+  {{name}}:
+    plugin: {{full_name}}
+    config:
+      api_key_env: {{NAME_UPPER}}_API_KEY
+
+agents:
+  default:
+    provider: {{name}}
+    model: {{name}}-large
+```
+
+## Run
+
+```bash
+animus daemon start
+animus workflow run --task-id <id>
+```
+
+## Roadmap
+
+The scaffold leaves two `todo!()` bodies in `src/backend.rs`. Implement
+them in this order:
+
+- [ ] `ProviderBackend::start` — translate `SessionRequest` into the
+      upstream chat-completion payload, open the streaming response, and
+      yield `SessionEvent`s as tokens / tool calls arrive.
+- [ ] `ProviderBackend::cancel` — abort in-flight requests via the
+      upstream cancel endpoint (or by dropping the stream).
+- [ ] Resume support — when `start` is called with `resume_session`,
+      look up the prior message history before issuing the next turn.
+- [ ] Contract tests against mocked streaming responses.
+- [ ] Release binaries via the bundled GitHub Actions workflow.
+
+## Design pointers
+
+- **Protocol design:** [`docs/architecture/subject-backend-plugins.md`](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/subject-backend-plugins.md)
+  (the provider protocol shares the JSON-RPC envelope)
+- **Naming contract:** [`docs/architecture/naming-contract.md`](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/naming-contract.md)
+- **Reference providers:** `animus-provider-claude`, `animus-provider-codex`,
+  `animus-provider-gemini`, `animus-provider-oai`, `animus-provider-opencode`
+- **Scaffold template:** [`launchapp-dev/animus-plugin-template`](https://github.com/launchapp-dev/animus-plugin-template)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -1,0 +1,50 @@
+# Animus plugin manifest.
+#
+# This file is the discovery surface read by `animus plugin install`
+# and the daemon when wiring a provider backend into the agent runner.
+# It mirrors `PluginManifest` in `animus-plugin-protocol`.
+#
+# Bump `version` in lock-step with `Cargo.toml`.
+
+schema      = "animus.plugin.v1"
+name        = "{{full_name}}"
+version     = "0.1.0"
+plugin_kind = "provider"
+description = "{{description}}"
+
+# Capabilities the daemon should expect from this provider.
+[capabilities]
+streaming    = true    # Provider emits agent/output, agent/thinking, etc.
+progress     = false   # Set to true if methods emit `$/progress`.
+cancellation = true    # Provider honors `agent/cancel` mid-run.
+
+# Methods this provider implements (mirrors the trait surface).
+methods = [
+  "agent/run",
+  "agent/resume",
+  "agent/cancel",
+  "health/check",
+]
+
+[binary]
+default = "{{full_name}}"
+
+# Environment variables the plugin reads. Surface every required env var
+# here so `animus plugin install` can prompt the operator and so
+# `animus doctor` can flag missing config.
+[[env]]
+name        = "{{NAME_UPPER}}_API_KEY"
+description = "API key for the {{name}} inference endpoint."
+required    = true
+secret      = true
+
+[[env]]
+name        = "{{NAME_UPPER}}_API_URL"
+description = "Override the upstream API base URL."
+required    = false
+
+[[env]]
+name        = "{{NAME_UPPER}}_DEFAULT_MODEL"
+description = "Default model to use when the caller omits one."
+required    = false
+default     = "{{name}}-default"

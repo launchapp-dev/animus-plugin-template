@@ -1,0 +1,93 @@
+# {{full_name}}
+
+An [Animus](https://github.com/launchapp-dev/animus-cli) subject backend for **{{name}}**.
+
+> **Status:** Under construction — scaffolded from
+> [`animus-plugin-template`](https://github.com/launchapp-dev/animus-plugin-template).
+> Implement the stubbed methods in `src/backend.rs` and ship.
+
+## What this is
+
+A standalone stdio plugin that exposes {{name}} records as Animus
+[subjects](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/subject-backend-plugins.md).
+Workflows dispatch agents over your {{name}} backlog without your team
+moving off {{name}}.
+
+## Install
+
+```bash
+animus plugin install {{org}}/{{full_name}}
+```
+
+This downloads the latest release binary, verifies the SHA256, and
+registers `{{full_name}}` with the daemon. Re-run after a release to
+upgrade.
+
+## Configure
+
+Set the upstream credentials:
+
+```bash
+export {{NAME_UPPER}}_API_TOKEN="<your-api-token>"
+# Optional: override the API base URL (useful for self-hosted instances).
+export {{NAME_UPPER}}_API_URL="https://api.{{name}}.example/v1"
+```
+
+Then wire the plugin into a workflow:
+
+```yaml
+# .animus/workflows/standard.yaml
+subjects:
+  {{name}}-default:
+    plugin: {{full_name}}
+    config:
+      api_token_env: {{NAME_UPPER}}_API_TOKEN
+    status_map:
+      ready:       ["Backlog", "Todo"]
+      in_progress: ["In Progress", "In Review"]
+      done:        ["Done"]
+      cancelled:   ["Cancelled", "Won't Fix"]
+
+workflows:
+  - id: {{name}}-impl
+    subject_type: {{name}}-default
+    phases: [implementation, review]
+```
+
+## Run
+
+```bash
+animus daemon start
+animus task next --subject-type {{name}}-default
+animus workflow run --task-id <id>
+```
+
+## Roadmap
+
+The scaffold leaves four `todo!()` bodies in `src/backend.rs`. Implement
+them in this order:
+
+- [ ] `SubjectBackend::list` — query the {{name}} API and map results to
+      `Vec<Subject>`. Honor `filter.status`, `filter.assignee`, and
+      `filter.cursor`.
+- [ ] `SubjectBackend::get` — fetch a single record by id.
+- [ ] `SubjectBackend::update` — apply a `SubjectPatch` (status change,
+      assignee reassignment, comment, custom-field update).
+- [ ] `SubjectBackend::watch` — optional real-time subscription via
+      webhook bridge or SSE. Polling is fine for v0.1.0.
+- [ ] Contract tests against mocked upstream responses (mockito for
+      HTTP, captured fixtures for complex cases).
+- [ ] Release binaries via the bundled GitHub Actions workflow.
+
+## Design pointers
+
+- **Protocol design:** [`docs/architecture/subject-backend-plugins.md`](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/subject-backend-plugins.md)
+- **Naming contract:** [`docs/architecture/naming-contract.md`](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/naming-contract.md)
+- **Scaffold template:** [`launchapp-dev/animus-plugin-template`](https://github.com/launchapp-dev/animus-plugin-template)
+
+Per the v0.4.0 naming convention, repo, crate, and binary all share the
+same name (`{{full_name}}`). There is no `ao-` prefix anywhere.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

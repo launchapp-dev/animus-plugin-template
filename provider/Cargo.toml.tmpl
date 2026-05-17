@@ -1,0 +1,53 @@
+[package]
+name        = "{{full_name}}"
+version     = "0.1.0"
+edition     = "2021"
+license     = "MIT"
+description = "{{description}}"
+repository  = "https://github.com/{{org}}/{{full_name}}"
+homepage    = "https://github.com/launchapp-dev/animus-cli"
+readme      = "README.md"
+authors     = ["{{author}} <{{author_email}}>"]
+default-run = "{{full_name}}"
+
+[lib]
+name = "{{name_snake}}_provider"
+path = "src/lib.rs"
+
+[[bin]]
+name = "{{full_name}}"
+path = "src/main.rs"
+
+[dependencies]
+# Animus plugin protocol crates.
+animus-plugin-protocol   = { git = "https://github.com/launchapp-dev/animus-protocol", branch = "main" }
+animus-provider-protocol = { git = "https://github.com/launchapp-dev/animus-protocol", branch = "main" }
+animus-session-backend   = { git = "https://github.com/launchapp-dev/animus-protocol", branch = "main" }
+animus-plugin-runtime    = { git = "https://github.com/launchapp-dev/animus-protocol", branch = "main" }
+
+# Async + serialization stack expected by the runtime.
+tokio       = { version = "1", features = ["rt-multi-thread", "macros"] }
+async-trait = "0.1"
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+
+# Error plumbing.
+anyhow    = "1"
+thiserror = "1"
+
+# HTTP — required if your provider talks to a hosted inference endpoint.
+# Remove if you're shelling out to a local CLI tool instead (in which
+# case keep `tokio::process` from the tokio feature set above).
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"], default-features = false }
+
+# Async streaming primitives for streaming token output.
+futures = "0.3"
+
+# Structured logs to stderr (stdout is reserved for JSON-RPC).
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tempfile = "3"
+mockito  = "1"
+tokio    = { version = "1", features = ["rt-multi-thread", "macros", "test-util"] }

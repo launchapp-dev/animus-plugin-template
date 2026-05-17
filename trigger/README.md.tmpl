@@ -1,0 +1,36 @@
+# {{full_name}}
+
+An [Animus](https://github.com/launchapp-dev/animus-cli) trigger backend for **{{name}}**.
+
+> **Status:** **Planned for Animus v0.4.x.** The `TriggerBackend` trait
+> is not yet designed, so this scaffold is intentionally stub-only. Once
+> the protocol crate (`animus-trigger-protocol`) lands, this directory
+> will gain a full skeleton matching the layout used by `subject/` and
+> `provider/`.
+
+## What this will be
+
+Trigger backends ingest external events (Slack messages, generic
+webhooks, file-system watchers, cron-style schedules, GitHub events,
+PagerDuty incidents, ...) and translate them into Animus subjects or
+direct workflow dispatch.
+
+Anticipated wire shape (subject to change):
+
+- `trigger/register` — declare what events the backend listens for.
+- `trigger/event` — server-streaming notifications carrying the event
+  payload, source metadata, and a routing hint.
+- `health/check` — same shape as the subject/provider variants.
+
+## Next steps
+
+Until v0.4.x:
+
+- Use a [`subject` plugin](https://github.com/launchapp-dev/animus-plugin-template/tree/main/subject)
+  with a poll loop if you need to bridge an external event source today.
+- Subscribe to the [Animus core repo](https://github.com/launchapp-dev/animus-cli)
+  for the v0.4.x roadmap.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
