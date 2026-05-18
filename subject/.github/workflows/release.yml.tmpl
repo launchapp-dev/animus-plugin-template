@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -105,11 +106,28 @@ jobs:
           pattern: release-*
           merge-multiple: true
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Sign archives with cosign (keyless)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          for ARCHIVE in *.tar.gz; do
+            cosign sign-blob \
+              --yes \
+              --bundle "${ARCHIVE}.bundle" \
+              "${ARCHIVE}"
+          done
+          ls -la
+
       - name: Create or update GitHub release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/*.tar.gz
             dist/*.tar.gz.sha256
+            dist/*.tar.gz.bundle
           generate_release_notes: true
           fail_on_unmatched_files: true
