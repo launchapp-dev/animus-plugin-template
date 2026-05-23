@@ -1,0 +1,149 @@
+//! Environment-driven configuration for `{{full_name}}`.
+//!
+//! The Animus daemon spawns the plugin as a stdio child process with no
+//! command-line arguments, so all runtime config flows in through
+//! environment variables. Mirror every variable here in `plugin.toml`'s
+//! `[[env]]` table so `animus plugin install` can prompt for them.
+
+use std::path::PathBuf;
+
+use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
+
+/// Required: directory the watcher will observe.
+pub const ENV_WATCH_PATH: &str = "{{NAME_UPPER}}_WATCH_PATH";
+
+/// Optional: debounce window in milliseconds between repeat events for
+/// the same path. Useful because editors typically issue several
+/// `Modify` events per save (atomic-rename, fsync, mtime bump, ...).
+pub const ENV_DEBOUNCE_MS: &str = "{{NAME_UPPER}}_DEBOUNCE_MS";
+
+/// Optional: whether to watch subdirectories recursively. Defaults to
+/// `true`. Accepts `true`/`false`/`1`/`0`.
+pub const ENV_RECURSIVE: &str = "{{NAME_UPPER}}_RECURSIVE";
+
+/// Default debounce window (250ms).
+pub const DEFAULT_DEBOUNCE_MS: u64 = 250;
+
+/// Runtime configuration for the
+/// [`crate::backend::{{NAME_PASCAL}}TriggerBackend`].
+///
+/// `Serialize`/`Deserialize` are derived so workflow YAML or test
+/// fixtures can drive the backend through a JSON blob instead of
+/// process environment.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct {{NAME_PASCAL}}Config {
+    /// Directory to watch for file-system events.
+    pub watch_path: PathBuf,
+    /// Debounce window in milliseconds.
+    #[serde(default = "default_debounce_ms")]
+    pub debounce_ms: u64,
+    /// Whether to descend into subdirectories.
+    #[serde(default = "default_recursive")]
+    pub recursive: bool,
+}
+
+fn default_debounce_ms() -> u64 {
+    DEFAULT_DEBOUNCE_MS
+}
+
+fn default_recursive() -> bool {
+    true
+}
+
+impl {{NAME_PASCAL}}Config {
+    /// Read configuration from the process environment. Returns an
+    /// error if [`ENV_WATCH_PATH`] is unset or any optional field
+    /// cannot be parsed.
+    pub fn from_env() -> Result<Self> {
+        let watch_path = std::env::var(ENV_WATCH_PATH)
+            .map(PathBuf::from)
+            .map_err(|_| {
+                anyhow!(
+                    "{ENV_WATCH_PATH} is not set; cannot start {{full_name}} without a watch path"
+                )
+            })?;
+
+        let debounce_ms = match std::env::var(ENV_DEBOUNCE_MS) {
+            Ok(raw) => raw.parse::<u64>().map_err(|err| {
+                anyhow!("{ENV_DEBOUNCE_MS}={raw:?} is not a non-negative integer: {err}")
+            })?,
+            Err(_) => DEFAULT_DEBOUNCE_MS,
+        };
+
+        let recursive = match std::env::var(ENV_RECURSIVE) {
+            Ok(raw) => parse_bool(&raw).ok_or_else(|| {
+                anyhow!("{ENV_RECURSIVE}={raw:?} is not a boolean (true/false/1/0)")
+            })?,
+            Err(_) => true,
+        };
+
+        Ok(Self {
+            watch_path,
+            debounce_ms,
+            recursive,
+        })
+    }
+
+    /// Parse a config blob handed in by the daemon as JSON. The
+    /// runtime accepts plain `serde_json::from_value` here; the helper
+    /// exists so embedders and tests have a stable entrypoint.
+    pub fn from_json(value: serde_json::Value) -> Result<Self> {
+        serde_json::from_value(value).map_err(|err| anyhow!("invalid trigger config: {err}"))
+    }
+
+    /// Construct configuration in-memory. Used by tests and embedders
+    /// that don't want to round-trip through process environment.
+    pub fn new(watch_path: impl Into<PathBuf>, debounce_ms: u64, recursive: bool) -> Self {
+        Self {
+            watch_path: watch_path.into(),
+            debounce_ms,
+            recursive,
+        }
+    }
+}
+
+fn parse_bool(raw: &str) -> Option<bool> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "true" | "1" | "yes" | "on" => Some(true),
+        "false" | "0" | "no" | "off" => Some(false),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_builds_config_without_env() {
+        let cfg = {{NAME_PASCAL}}Config::new("/tmp/watch", 500, false);
+        assert_eq!(cfg.watch_path, PathBuf::from("/tmp/watch"));
+        assert_eq!(cfg.debounce_ms, 500);
+        assert!(!cfg.recursive);
+    }
+
+    #[test]
+    fn from_json_applies_defaults_for_missing_fields() {
+        let value = serde_json::json!({ "watch_path": "/tmp/x" });
+        let cfg = {{NAME_PASCAL}}Config::from_json(value).expect("parse minimal config");
+        assert_eq!(cfg.watch_path, PathBuf::from("/tmp/x"));
+        assert_eq!(cfg.debounce_ms, DEFAULT_DEBOUNCE_MS);
+        assert!(cfg.recursive);
+    }
+
+    #[test]
+    fn from_json_rejects_missing_watch_path() {
+        let value = serde_json::json!({ "debounce_ms": 100 });
+        assert!({{NAME_PASCAL}}Config::from_json(value).is_err());
+    }
+
+    #[test]
+    fn parse_bool_accepts_common_truthy_and_falsy_values() {
+        assert_eq!(parse_bool("true"), Some(true));
+        assert_eq!(parse_bool("FALSE"), Some(false));
+        assert_eq!(parse_bool("1"), Some(true));
+        assert_eq!(parse_bool("0"), Some(false));
+        assert_eq!(parse_bool("maybe"), None);
+    }
+}

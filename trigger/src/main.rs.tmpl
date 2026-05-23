@@ -1,0 +1,36 @@
+//! Stdio entrypoint for the `{{full_name}}` trigger plugin.
+//!
+//! The Animus daemon spawns this binary as a child process and speaks
+//! JSON-RPC over stdin/stdout. All the protocol plumbing
+//! (`initialize`, `trigger/watch`, `trigger/schema`, `health/check`,
+//! the `trigger/event` notification stream) lives in
+//! [`animus_plugin_runtime::trigger_backend_main`]; this file just
+//! constructs the backend and hands off.
+
+use animus_plugin_protocol::{PluginInfo, PLUGIN_KIND_TRIGGER_BACKEND};
+use animus_plugin_runtime::trigger_backend_main;
+use {{name_snake}}_trigger::backend::{{NAME_PASCAL}}TriggerBackend;
+use {{name_snake}}_trigger::config::{{NAME_PASCAL}}Config;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stderr)
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .init();
+
+    let config = {{NAME_PASCAL}}Config::from_env()?;
+    let backend = {{NAME_PASCAL}}TriggerBackend::new(config)?;
+
+    let info = PluginInfo {
+        name: env!("CARGO_PKG_NAME").to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        plugin_kind: PLUGIN_KIND_TRIGGER_BACKEND.to_string(),
+        description: Some(env!("CARGO_PKG_DESCRIPTION").to_string()),
+    };
+
+    trigger_backend_main(info, backend).await
+}

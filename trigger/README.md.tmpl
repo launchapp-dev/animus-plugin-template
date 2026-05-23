@@ -2,34 +2,93 @@
 
 An [Animus](https://github.com/launchapp-dev/animus-cli) trigger backend for **{{name}}**.
 
-> **Status:** **Planned for Animus v0.4.x.** The `TriggerBackend` trait
-> is not yet designed, so this scaffold is intentionally stub-only. Once
-> the protocol crate (`animus-trigger-protocol`) lands, this directory
-> will gain a full skeleton matching the layout used by `subject/` and
-> `provider/`.
+> **Status:** Scaffolded from
+> [`animus-plugin-template`](https://github.com/launchapp-dev/animus-plugin-template).
+> The example backend watches a directory and emits one event per
+> debounced file change. Swap the `notify` watcher in `src/backend.rs`
+> for any other event source (Slack socket, webhook listener, cron
+> interval, message queue) — the trait surface does not change.
 
-## What this will be
+## What this is
 
-Trigger backends ingest external events (Slack messages, generic
-webhooks, file-system watchers, cron-style schedules, GitHub events,
-PagerDuty incidents, ...) and translate them into Animus subjects or
-direct workflow dispatch.
+A standalone stdio plugin that emits [`TriggerEvent`s](https://github.com/launchapp-dev/animus-protocol/blob/main/animus-trigger-protocol/src/lib.rs)
+into the Animus daemon. Triggers are push-driven: the runtime calls
+`trigger/watch` once, the plugin streams events as `trigger/event`
+notifications, and workflows match on `kind` to dispatch work.
 
-Anticipated wire shape (subject to change):
+## Install
 
-- `trigger/register` — declare what events the backend listens for.
-- `trigger/event` — server-streaming notifications carrying the event
-  payload, source metadata, and a routing hint.
-- `health/check` — same shape as the subject/provider variants.
+```bash
+animus plugin install {{org}}/{{full_name}}
+```
 
-## Next steps
+This downloads the latest release binary, verifies the SHA256, and
+registers `{{full_name}}` with the daemon. Re-run after a release to
+upgrade.
 
-Until v0.4.x:
+## Configure
 
-- Use a [`subject` plugin](https://github.com/launchapp-dev/animus-plugin-template/tree/main/subject)
-  with a poll loop if you need to bridge an external event source today.
-- Subscribe to the [Animus core repo](https://github.com/launchapp-dev/animus-cli)
-  for the v0.4.x roadmap.
+Set the watch target:
+
+```bash
+export {{NAME_UPPER}}_WATCH_PATH="/path/to/watch"
+# Optional:
+export {{NAME_UPPER}}_DEBOUNCE_MS=250
+export {{NAME_UPPER}}_RECURSIVE=true
+```
+
+Wire the plugin into a workflow:
+
+```yaml
+# .animus/workflows/standard.yaml
+triggers:
+  {{name}}-watch:
+    plugin: {{full_name}}
+    config:
+      watch_path: ./inbox
+      debounce_ms: 250
+      recursive: true
+
+workflows:
+  - id: process-inbox
+    trigger: {{name}}-watch
+    phases: [triage, implementation]
+```
+
+When a file inside `./inbox` changes, the trigger emits a
+`{{name}}_file_changed` event and the daemon enqueues the workflow.
+
+## Run
+
+```bash
+animus daemon start
+# Drop a file into the watched directory; the daemon enqueues the
+# wired workflow within `debounce_ms`.
+```
+
+## Roadmap
+
+The scaffold ships a complete, working example. To turn it into your
+production trigger:
+
+- [ ] Replace the `notify::recommended_watcher` in `src/backend.rs`
+      with your real event source (HTTP listener, Slack socket,
+      cron interval, ...).
+- [ ] Update `TriggerSchema::kinds` and `event_kind()` to match the
+      event taxonomy your source produces.
+- [ ] If your source supports delivery confirmation, implement
+      `TriggerBackend::ack` and set `supports_ack = true`.
+- [ ] If your source survives restarts and exposes a cursor, set
+      `supports_resume = true` and persist the cursor between runs.
+- [ ] Add a contract test under `tests/` for every event kind you
+      emit.
+
+## Design pointers
+
+- **Trigger protocol:** [`animus-trigger-protocol`](https://github.com/launchapp-dev/animus-protocol/blob/main/animus-trigger-protocol/src/lib.rs)
+- **Runtime entrypoint:** [`trigger_backend_main`](https://github.com/launchapp-dev/animus-protocol/blob/main/animus-plugin-runtime/src/lib.rs)
+- **Naming contract:** [`docs/architecture/naming-contract.md`](https://github.com/launchapp-dev/animus-cli/blob/main/docs/architecture/naming-contract.md)
+- **Scaffold template:** [`launchapp-dev/animus-plugin-template`](https://github.com/launchapp-dev/animus-plugin-template)
 
 ## License
 

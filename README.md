@@ -18,7 +18,8 @@ kinds are supported:
 - **`provider`** — a backend for an LLM provider (OpenAI, Anthropic,
   Gemini, on-prem inference, ...)
 - **`trigger`** — a backend for event ingest (Slack, generic webhooks,
-  file watchers, ...) — full scaffold lands in v0.4.x.
+  file watchers, cron, ...). Ships a working `FileWatch` example built
+  on `animus-trigger-protocol` v0.1.8.
 
 Until `animus plugin new` ships, scaffold a new plugin by cloning this
 repo, copying the kind subdirectory you want, and substituting the
@@ -53,8 +54,8 @@ animus-plugin-template/
 │   └── .gitignore
 ├── provider/                # full scaffold for provider backends
 │   └── (same layout as subject/)
-└── trigger/                 # placeholder; full skeleton lands in v0.4.x
-    └── README.md.tmpl
+└── trigger/                 # full scaffold for trigger backends
+    └── (same layout as subject/)
 ```
 
 Files with a `.tmpl` suffix are processed by the substitution engine.
@@ -202,9 +203,18 @@ References: `animus-provider-claude`, `animus-provider-codex`,
 
 ### `trigger/`
 
-**Placeholder.** Full scaffold lands once `TriggerBackend` is defined in
-v0.4.x. For now the directory only contains a README explaining the
-plan.
+Models a [`TriggerBackend`](https://github.com/launchapp-dev/animus-protocol/blob/main/animus-trigger-protocol/src/lib.rs)
+implementation. Pinned to `animus-protocol` **v0.1.8** — the first tag
+exposing `animus-trigger-protocol`. The shipped example is a
+`FileWatch` backend built on the `notify` crate: it watches a directory
+and emits one debounced `{{name}}_file_changed` event per file change.
+Swap the watcher in `src/backend.rs` for a Slack socket, webhook
+listener, cron interval, message queue, or any other event source —
+the trait surface (`schema`, `watch`, `ack`, `health`) does not change.
+
+Reference: the trigger scaffold ships with a real `notify`-based
+backend that runs as-is; downstream forks customize the event source
+rather than starting from `todo!()`.
 
 ## Design pointers
 

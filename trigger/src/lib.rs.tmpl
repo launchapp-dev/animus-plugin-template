@@ -1,0 +1,15 @@
+//! {{description}}
+//!
+//! Library surface for [`{{full_name}}`]. Consumed by the stdio plugin
+//! binary in `src/main.rs` and by unit + integration tests under
+//! `src/backend.rs` and `tests/`.
+//!
+//! Modules:
+//!
+//! - [`backend`] — the [`animus_trigger_protocol::TriggerBackend`] impl.
+//! - [`config`] — env-driven runtime configuration.
+
+#![warn(missing_docs)]
+
+pub mod backend;
+pub mod config;

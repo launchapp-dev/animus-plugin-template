@@ -1,0 +1,47 @@
+schema      = "animus.plugin.v1"
+name        = "{{full_name}}"
+version     = "0.1.0"
+plugin_kind = "trigger_backend"
+description = "{{description}}"
+
+# Capabilities the daemon should expect from this trigger backend.
+# `streaming` is always true for triggers — `trigger/watch` is the
+# primary surface and emits `trigger/event` notifications.
+[capabilities]
+streaming    = true
+progress     = false
+cancellation = false
+
+# Methods this trigger implements. Mirror these in `TriggerSchema` so
+# `trigger/schema` and the manifest agree.
+methods = [
+  "trigger/watch",
+  "trigger/schema",
+  "health/check",
+]
+
+# Event kinds this backend can emit. Workflows match on these values.
+event_kinds = ["{{name}}_file_changed"]
+
+[binary]
+default = "{{full_name}}"
+
+# Environment variables the plugin reads. Surface every required env var
+# here so `animus plugin install` can prompt the operator and so
+# `animus doctor` can flag missing config.
+[[env]]
+name        = "{{NAME_UPPER}}_WATCH_PATH"
+description = "Directory to watch for file changes."
+required    = true
+
+[[env]]
+name        = "{{NAME_UPPER}}_DEBOUNCE_MS"
+description = "Debounce window in milliseconds before re-emitting events for the same path."
+required    = false
+default     = "250"
+
+[[env]]
+name        = "{{NAME_UPPER}}_RECURSIVE"
+description = "Whether to watch subdirectories recursively (true/false)."
+required    = false
+default     = "true"

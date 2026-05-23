@@ -94,3 +94,37 @@ jobs:
       - name: cargo check on rendered provider scaffold
         working-directory: ${{ runner.temp }}/provider-render
         run: cargo check
+
+  render-trigger:
+    name: trigger scaffold renders + cargo checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Substitute trigger template into tempdir
+        run: |
+          mkdir -p $RUNNER_TEMP/trigger-render
+          cd trigger
+          for f in $(find . -name '*.tmpl' -type f); do
+            outf="$RUNNER_TEMP/trigger-render/${f%.tmpl}"
+            mkdir -p "$(dirname "$outf")"
+            sed -e 's/{{name}}/inbox/g' \
+                -e 's/{{NAME_UPPER}}/INBOX/g' \
+                -e 's/{{NAME_PASCAL}}/Inbox/g' \
+                -e 's/{{name_snake}}/inbox/g' \
+                -e 's/{{kind}}/trigger/g' \
+                -e 's/{{full_name}}/animus-trigger-inbox/g' \
+                -e 's/{{description}}/An Animus trigger backend plugin/g' \
+                -e 's|{{org}}|launchapp-dev|g' \
+                -e 's/{{year}}/2026/g' \
+                -e 's/{{author}}/Test Author/g' \
+                -e 's|{{author_email}}|test@example.com|g' \
+                "$f" > "$outf"
+          done
+      - name: cargo check on rendered trigger scaffold
+        working-directory: ${{ runner.temp }}/trigger-render
+        run: cargo check
+      - name: cargo test on rendered trigger scaffold
+        working-directory: ${{ runner.temp }}/trigger-render
+        run: cargo test

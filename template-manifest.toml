@@ -10,7 +10,7 @@
 # variable list or the per-kind layout changes in an incompatible way.
 
 schema      = "animus.plugin-template.v1"
-version     = "0.1.0"
+version     = "0.2.0"
 description = "Scaffold templates for Animus plugins (subject, provider, trigger)"
 homepage    = "https://github.com/launchapp-dev/animus-cli"
 repository  = "https://github.com/launchapp-dev/animus-plugin-template"
@@ -45,12 +45,12 @@ status             = "stable"
 
 [[kinds]]
 id                 = "trigger"
-description        = "A backend for event ingest (Slack, generic webhooks, file watchers) — landing in v0.4.x"
+description        = "A backend for event ingest (Slack, generic webhooks, file watchers, cron, ...) — built on animus-trigger-protocol v0.1.8"
 root               = "trigger"
 trait              = "TriggerBackend"
 runtime_entrypoint = "trigger_backend_main"
 protocol_crate     = "animus-trigger-protocol"
-status             = "planned"
+status             = "stable"
 
 # ---------------------------------------------------------------------------
 # Substitution engine

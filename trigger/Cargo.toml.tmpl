@@ -1,0 +1,58 @@
+[package]
+name        = "{{full_name}}"
+version     = "0.1.0"
+edition     = "2021"
+license     = "MIT"
+description = "{{description}}"
+repository  = "https://github.com/{{org}}/{{full_name}}"
+homepage    = "https://github.com/launchapp-dev/animus-cli"
+readme      = "README.md"
+authors     = ["{{author}} <{{author_email}}>"]
+default-run = "{{full_name}}"
+
+[lib]
+name = "{{name_snake}}_trigger"
+path = "src/lib.rs"
+
+[[bin]]
+name = "{{full_name}}"
+path = "src/main.rs"
+
+[dependencies]
+# Animus plugin protocol crates — pinned to the v0.1.8 release which is
+# the first tag exposing `animus-trigger-protocol`.
+animus-plugin-protocol  = { git = "https://github.com/launchapp-dev/animus-protocol", tag = "v0.1.8" }
+animus-trigger-protocol = { git = "https://github.com/launchapp-dev/animus-protocol", tag = "v0.1.8" }
+animus-plugin-runtime   = { git = "https://github.com/launchapp-dev/animus-protocol", tag = "v0.1.8" }
+
+# Async + serialization stack expected by the runtime.
+tokio       = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+async-trait = "0.1"
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+
+# Error plumbing.
+anyhow    = "1"
+thiserror = "1"
+
+# Timestamps for `TriggerEvent::occurred_at`.
+chrono = { version = "0.4", features = ["serde"] }
+
+# Stream primitives. `TriggerStream` is a `Stream`; `tokio-stream` gives
+# us a ready-made `ReceiverStream` wrapper around an `mpsc::Receiver`.
+futures-core = "0.3"
+tokio-stream = { version = "0.1", features = ["sync"] }
+
+# File-system watcher. Swap for `inotify`, a webhook listener, a Slack
+# socket, a `tokio::time::interval`, or any other event source your
+# trigger needs. The shape of the trait does not change.
+notify = "6"
+
+# Structured logs to stderr (stdout is reserved for JSON-RPC).
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tempfile = "3"
+tokio    = { version = "1", features = ["rt-multi-thread", "macros", "test-util", "fs", "time", "sync"] }
+futures  = "0.3"
